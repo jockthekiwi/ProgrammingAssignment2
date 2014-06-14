@@ -2,22 +2,41 @@
 ## 12 June 2014
 ## Author: jockthekiwi
 
-## Write a short comment describing this function
+
+## Function manages the global list m which caches a matrix and its inverse (m#mat and m$mat.inverse)
+## The function compares x with global m and:
+##      if global cache m does not exist then CREATE
+##      if global cache m exits and source matrix matches new matrix then return Cached value
+##      if global cache m does not match new matrix the RESET
 
 makeCacheMatrix <- function(x = matrix()) {
 
-        ## m.c is the global variable for the Matix cache
-        m.c <- NULL
-        set <- function(y) {
-                x <<- y
-                m.c <<- NULL
+        ## Does global list m exist? If no then create
+        if (exists("m")==FALSE) {
+                ## cached variable does not exist so create it
+                m <<- list(mat=x, mat.inverse=solve(x))
+                action <-  "Create"
+        } 
+        else {
+                ## Global Cache exists
+                
+                ## check if matches hte passed Matrix , 
+                ## 1. Check x and Global cache are matrixes
+                ## 2. Check matrix dimensions are the same
+                ## 3. Check if the matrix values are the same
+                if (is.matrix(x) && is.matrix(m$mat) && dim(x) == dim(m$mat) && all(x == m$mat)) {
+                        ## No action required - cached value exists and is an exact match of x
+                        action <- "Cached"       
+                }
+                else {
+                        ## Cache exists but does not match supplied matrix
+                        ## reset the cache
+                        m <<- list(mat=x, mat.inverse=solve(x))
+                        action <- "Reset Cache"
+                }
         }
-        get <- function() x
-        setinvert <- function(solve) m.c <<- solve
-        getinvert <- function() m.c
-        list(set = set, get = get,
-             setinvert = setinvert,
-             getinvert = getinvert)
+        ## Return value to indicate operation 
+        action
         
 }
 
@@ -26,14 +45,12 @@ makeCacheMatrix <- function(x = matrix()) {
 
 cacheSolve <- function(x, ...) {
         ## Return a matrix that is the inverse of 'x'
-        m<-x$getinvert()
-        if(!is.null(m.c)) {
-                message("getting cached data")
-                return(m.c)
-        }
-        data <- x$get()
-        m.c <- solve(data)
-        x$setinvert(m.c)
-        m.c
+        
+        ## Call matrix cache handler - after this call global variable
+        ## m will contain be a list and matrix and its inverse (m#mat and m$mat.inverse)
+        a<-makeCacheMatrix(x)
+        
+        ## return inverse from the global cache
+        m$mat.inverse
         
 }
